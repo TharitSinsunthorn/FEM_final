@@ -1,4 +1,5 @@
 import numpy as np
+import scipy as sp
 import sys
 
 
@@ -80,7 +81,7 @@ def cal_F(K, U):
     return F
 
 
-f = np.array([[0],[0],[0],[0],[0],[1],[0],[1]])
+f = np.array([[0],[0],[1],[1]])
 def cal_U(K, F):
     invK = np.linalg.inv(K)
     U = invK.dot(F)
@@ -97,18 +98,28 @@ def combineK(K1, K2):
     tk[5] = [K1[5][0]+K2[3][0], K1[5][1]+K2[3][1], K1[5][2], K1[5][3], K1[5][4]+K2[3][2], K1[5][5]+K2[3][3], K2[3][4], K2[3][5]] 
     tk[6] = [         K2[4][0],          K2[4][1],     0   ,     0   ,          K2[4][2],          K2[4][3], K2[4][4], K2[4][5]] 
     tk[7] = [         K2[5][0],          K2[5][1],     0   ,     0   ,          K2[5][2],          K2[5][3], K2[5][4], K2[5][5]] 
-        
-
+    
 
     return tk
 
+def reduce(K):
+    rk = np.zeros([4,4])
+    rk[0] = [K[2][2], K[2][4], K[2][5], K[2][7]]
+    rk[1] = [K[4][2], K[4][4], K[4][5], K[4][7]]
+    rk[2] = [K[5][2], K[5][4], K[5][5], K[5][7]]
+    rk[3] = [K[7][2], K[7][4], K[7][5], K[7][7]] 
+    return rk
+
 K1 = K_pstress(M1, E, v).K()
 K2 = K_pstress(M2, E, v).K()
-# U = cal_U(combineK(K1,K2), f)
+
 KK = combineK(K1,K2)
+RK = reduce(KK)
 iK = np.linalg.inv(KK)
-# U = cal_U(KK, f)
+U = cal_U(RK, f)
 print(np.around(KK,2))
-# print(np.around(iK,2))
+print(np.around(RK,2))
+print(U)
+# print(np.around(U,2))
 # print(np.around(KK.dot(iK),2))
 
