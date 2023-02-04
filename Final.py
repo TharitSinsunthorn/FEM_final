@@ -1,10 +1,10 @@
 import numpy as np
 import scipy as sp
-import sys
-
 
 E = 1000 #Young's modulus in MPa
 v = 0.25   #Poisson's ratio
+pi = np.pi
+
 
 N0 = [0,0]
 N1 = [1,0]
@@ -12,6 +12,9 @@ N2 = [1,2]
 N3 = [0,2]
 
 p = [N0, N1, N2, N3]
+N = len(p)
+theta = np.pi/4
+sec = int(2*pi/theta)
 
 M1 = [0, 1, 2]
 M2 = [0, 2, 3]
@@ -74,8 +77,7 @@ class K_pstress(K_pstrain):
 
         return D
 
-
-def totK(M, p, E, v):
+def Ktot(M, p, E, v):
     Ksize = 2*len(p)
     K = np.zeros([Ksize, Ksize])
     
@@ -104,17 +106,21 @@ def totK(M, p, E, v):
     
     return K
 
-u = np.zeros([6,1])
-u[4] = 0.01
-u[5] = 0
+def Kreduce(K, N, sec):
+    N = len(K) / 2
+    rk = np.delete(K,int(2*N*(sec/2 + 1)) + 1, 0)
+    rk = np.delete(K, int(2*(N*sec/2 + 1) + 1), 1)
+    for i in range(2*N*(sec/2 + 1), 2*(1+N*sec/2)-2, -2):
+        rk = np.delete(K,i,0)
+        rk = np.delete(K,i,1)
+    for i in range(2*N, -2, -2):
+        rk = np.delete(K,i,0)
+        rk = np.delete(K,i,1)
+    return rk
 
-def cal_F(K, U):
-    F = K.dot(U)
-
-    return F
-
-
-f = np.array([[0],[0],[1],[1]])
+f = np.zeros([2*len(p),1])
+# f[8] = 0
+# f[9] = 1000
 def cal_U(K, F):
     invK = np.linalg.inv(K)
     U = invK.dot(F)
@@ -122,18 +128,15 @@ def cal_U(K, F):
     return U
 
 
-def reduce(K):
-    rk = np.zeros([4,4])
-    rk[0] = [K[2][2], K[2][4], K[2][5], K[2][7]]
-    rk[1] = [K[4][2], K[4][4], K[4][5], K[4][7]]
-    rk[2] = [K[5][2], K[5][4], K[5][5], K[5][7]]
-    rk[3] = [K[7][2], K[7][4], K[7][5], K[7][7]] 
-    return rk
+
 
 K1 = K_pstress(M1, p, E, v).K()
 K2 = K_pstrain(M2, p, E, v).K()
-TK = totK(M, p , E, v )
-print(np.around(TK,2))
+TK = Ktot(M, p , E, v )
+RK = Kreduce(TK, N, sec)
+# RK = np.delete(TK, 0, 0)
+print(np.shape(RK))
+print(len(TK))
 # KK = totK(K1,K2)
 # RK = reduce(KK)
 # iK = np.linalg.inv(KK)
