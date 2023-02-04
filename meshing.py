@@ -2,53 +2,80 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.tri as tri
 
-W = 1
-H = 1
+pi = np.pi
+R = 1
+N = 4
+theta = pi/4
+r = R/N
+mps = 2*N-1
+sec = int(2*pi/theta)
 
-Nx = 3
-Ny = 3
+p = np.zeros([2, N*sec + 1])
+mesh = np.zeros([(mps)*sec, 3])
 
-dx = W / (Nx-1)
-dy = H / (Ny-1)
+def rotate(o, p, theta):
+    """
+    Rotate a point counterclockwise by a given angle around a given origin.
 
-p = np.zeros([2,Nx*Ny])
-mesh = np.zeros([2*(Nx-1)*(Ny-1), 3])
+    The angle should be given in radians.
+    """
+    ox, oy = o
+    px, py = p
 
-index = 0
-for i in range (0,Ny):
-    y = i*dy
-    for j in range (-Nx+1,1):
-        x = j*dx
-        p[0][index] = x
-        p[1][index] = y
-        index+=1
+    npx = ox + np.cos(theta) * (px - ox) - np.sin(theta) * (py - oy)
+    npy = oy + np.sin(theta) * (px - ox) + np.cos(theta) * (py - oy)
+    return npx, npy
 
+#Finding coordinate of all nodes
+for i in range (0,sec):
+    for j in range (1, N+1):
+        p[0][N*i + j], p[1][N*i+j] = rotate([0.0, 0.0], [0.0, (j) * R/N], i * theta)
+    
+# print(np.shape(p))
+# print(np.around(np.transpose(p),2))
+# print(np.shape(mesh))
 
-print(p)
+# Finding index
+# mesh around origin
+mesh[mps*(sec-1)] = [0, 1 + N*(sec-1), 1]
+for i in range(0,sec-1):
+    mesh[mps*i][0] = 0.0
+    mesh[mps*i][1] = 1 + N*i
+    mesh[mps*i][2] = 1 + N*(i+1)
+# mesh type1
+for i in range (0, sec):
+    for j in range(1,N):
+        m = [N*i + 1 + (j-1), N*i + 2 + (j-1), N*i + N+1 + (j-1)]
 
-index = 0
-for i in range (1,Ny):
-    for j in range (1,Nx):
-        index1 = j + (i-1)* Nx
-        index2 = index1 + 1 
-        index3 = index2 + Nx
-        index4 = index1 + Nx
+        for e in range(len(m)):
+            if m[e] > N*sec:
+                m[e] = (m[e] - N*sec)
         
-        mesh[index] = [index1, index3, index4]
-        index += 1
-        mesh[index] = [index1, index2, index3]
-        index += 1 
+        mesh[i*(mps) + j] = m
+        
+# mesh type2
+for i in range (0, sec):
+    for j in range(1,N):
+        m = [N*i + 2 + (j-1), N*(i+1) + 2 + (j-1), N*(i+1) + 1 + (j-1)]
 
-print(mesh-1)
+        for e in range(len(m)):
+            if m[e] > N*sec:
+                m[e] = (m[e] - N*sec)
 
-x = np.linspace(0, 1, 100)
-y = np.sqrt(1.0**2 - (x)**2)
+        mesh[i*(mps) + j + N-1] = m
+
+print(mesh)
+print(np.shape(mesh))
+
+
+# x = np.linspace(0, 1, 100)
+# y = np.sqrt(1.0**2 - (x)**2)
 plt.scatter(p[0], p[1])
-triangulation = tri.Triangulation(p[0], p[1], mesh-1)
+triangulation = tri.Triangulation(p[0], p[1], mesh)
 plt.triplot(triangulation, '-k')
 
-# plt.plot(p)
-plt.plot(-x, y ,'b')
-plt.plot(-x, -y ,'b')
+# # plt.plot(p)
+# plt.plot(-x, y ,'b')
+# plt.plot(-x, -y ,'b')
 plt.gca().set_aspect('equal')
 plt.show()

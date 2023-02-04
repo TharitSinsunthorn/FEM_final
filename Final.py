@@ -6,30 +6,34 @@ import sys
 E = 1000 #Young's modulus in MPa
 v = 0.25   #Poisson's ratio
 
-N1 = [0,0]
-N2 = [1,0]
-N3 = [1,2]
-N4 = [0,2]
+N0 = [0,0]
+N1 = [1,0]
+N2 = [1,2]
+N3 = [0,2]
 
-M1 = [N1, N2, N3]
-M2 = [N1, N3, N4]
+p = [N0, N1, N2, N3]
+
+M1 = [0, 1, 2]
+M2 = [0, 2, 3]
+
+M = np.array([M1, M2]) 
 
 class K_pstrain:
-    def __init__(self, M, E, v):
+    def __init__(self, M, P,  E, v):
         self.E = E
         self.v = v
-        self.M = M
-        self.x1 = M[0][0]
-        self.y1 = M[0][1]
-        self.x2 = M[1][0]
-        self.y2 = M[1][1]
-        self.x3 = M[2][0]
-        self.y3 = M[2][1]
+        self.P = P
+        self.x1 = P[M[0]][0]
+        self.y1 = P[M[0]][1]
+        self.x2 = P[M[1]][0]
+        self.y2 = P[M[1]][1]
+        self.x3 = P[M[2]][0]
+        self.y3 = P[M[2]][1]
     
     def B(self):
-        b = np.array([[self.M[1][1]-self.M[2][1],             0            , self.M[2][1]-self.M[0][1],             0            , self.M[0][1]-self.M[1][1],             0            ], \
-                      [            0            , self.M[2][0]-self.M[1][0],             0            , self.M[0][0]-self.M[2][0],             0            , self.M[1][0]-self.M[0][0]], \
-                      [self.M[2][0]-self.M[1][0], self.M[1][1]-self.M[2][1], self.M[0][0]-self.M[2][0], self.M[2][1]-self.M[0][1], self.M[1][0]-self.M[0][0], self.M[0][1]-self.M[1][1]]])
+        b = np.array([[self.y2 - self.y3,           0        ,   self.y3 - self.y1,           0        ,   self.y1 - self.y2,           0        ], \
+                      [        0        ,   self.x3 - self.x2,           0        ,   self.x1 - self.x3,           0        ,   self.x2 - self.x1], \
+                      [self.x3 - self.x2,   self.y2 - self.y3,   self.x1 - self.x3,   self.y3 - self.y1,   self.x2 - self.x1,   self.y1 - self.y2]])
         B = 1/(2*self.mesharea()) * b
 
         return B
@@ -58,8 +62,8 @@ class K_pstrain:
         return k
 
 class K_pstress(K_pstrain):
-    def __init__(self, M, E, v):
-        super().__init__(M, E, v)
+    def __init__(self, M, P, E, v):
+        super().__init__(M, P, E, v)
     
     def D(self):
         d = np.array([[   1   , self.v,      0      ], \
@@ -70,6 +74,35 @@ class K_pstress(K_pstrain):
 
         return D
 
+
+def totK(M, p, E, v):
+    Ksize = 2*len(p)
+    K = np.zeros([Ksize, Ksize])
+    
+    # Making stiffness matrix
+    for i in range(len(M)):
+        Ki = K_pstress(M[i], p, E, v).K()
+
+        for j in range(len(M[i])):
+            idr = M[i][j]
+            for k in range(len(M[i])):
+                idc = M[i][k]
+                
+                K[2*idr][2*idc] += Ki[2*j][2*k]
+                K[2*idr][2*idc+1] += Ki[2*j][2*k+1]
+                K[2*idr+1][2*idc] += Ki[2*j+1][2*k]
+                K[2*idr+1][2*idc+1] += Ki[2*j+1][2*k+1]
+
+    return K
+
+
+
+    # for row in range(len(Ki)):
+    #     for col in range(len(Ki)):
+    #         K[col][row] = Ki[M[0]]
+    
+    
+    return K
 
 u = np.zeros([6,1])
 u[4] = 0.01
@@ -88,19 +121,6 @@ def cal_U(K, F):
     
     return U
 
-def combineK(K1, K2):
-    tk = np.zeros([8,8])
-    tk[0] = [K1[0][0]+K2[0][0], K1[0][1]+K2[0][1], K1[0][2], K1[0][3], K1[0][4]+K2[0][2], K1[0][5]+K2[0][3], K2[0][4], K2[0][5]] 
-    tk[1] = [K1[1][0]+K2[1][0], K1[1][1]+K2[1][1], K1[1][2], K1[1][3], K1[1][4]+K2[1][2], K1[1][5]+K2[1][3], K2[1][4], K2[1][5]] 
-    tk[2] = [K1[2][0]         , K1[2][1]         , K1[2][2], K1[2][3], K1[2][4]         , K1[2][5]         ,     0   ,    0    ] 
-    tk[3] = [K1[3][0]         , K1[3][1]         , K1[3][2], K1[3][3], K1[3][4]         , K1[3][5]         ,     0   ,    0    ] 
-    tk[4] = [K1[4][0]+K2[2][0], K1[4][1]+K2[2][1], K1[4][2], K1[4][3], K1[4][4]+K2[2][2], K1[4][5]+K2[2][3], K2[2][4], K2[2][5]] 
-    tk[5] = [K1[5][0]+K2[3][0], K1[5][1]+K2[3][1], K1[5][2], K1[5][3], K1[5][4]+K2[3][2], K1[5][5]+K2[3][3], K2[3][4], K2[3][5]] 
-    tk[6] = [         K2[4][0],          K2[4][1],     0   ,     0   ,          K2[4][2],          K2[4][3], K2[4][4], K2[4][5]] 
-    tk[7] = [         K2[5][0],          K2[5][1],     0   ,     0   ,          K2[5][2],          K2[5][3], K2[5][4], K2[5][5]] 
-    
-
-    return tk
 
 def reduce(K):
     rk = np.zeros([4,4])
@@ -110,16 +130,20 @@ def reduce(K):
     rk[3] = [K[7][2], K[7][4], K[7][5], K[7][7]] 
     return rk
 
-K1 = K_pstress(M1, E, v).K()
-K2 = K_pstress(M2, E, v).K()
+K1 = K_pstress(M1, p, E, v).K()
+K2 = K_pstrain(M2, p, E, v).K()
+TK = totK(M, p , E, v )
+print(np.around(TK,2))
+# KK = totK(K1,K2)
+# RK = reduce(KK)
+# iK = np.linalg.inv(KK)
+# U = cal_U(RK, f)
 
-KK = combineK(K1,K2)
-RK = reduce(KK)
-iK = np.linalg.inv(KK)
-U = cal_U(RK, f)
-print(np.around(KK,2))
-print(np.around(RK,2))
-print(U)
-# print(np.around(U,2))
+# F1 = cal_F(reduce(K1), U)
+# F2 = cal_F(reduce(K2), U)
+# print(np.around(KK,2))
+# print(np.around(RK,2))
+# print(U)
+# # print(np.around(U,2))
 # print(np.around(KK.dot(iK),2))
 
