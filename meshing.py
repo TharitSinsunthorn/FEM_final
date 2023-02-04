@@ -39,7 +39,7 @@ def FindIndex(mesh, N, theta):
     # mesh around origin
     mesh[mps*(sec-1)] = [0, 1 + N*(sec-1), 1]
     for i in range(0,sec-1):
-        mesh[mps*i][0] = 0.0
+        mesh[mps*i][0] = 0
         mesh[mps*i][1] = 1 + N*i
         mesh[mps*i][2] = 1 + N*(i+1)
     # mesh type1
@@ -63,6 +63,7 @@ def FindIndex(mesh, N, theta):
 
             mesh[i*(mps) + j + N-1] = m
 
+    mesh.astype(int)
 
 
 Findcoor(p, R, N, theta)
