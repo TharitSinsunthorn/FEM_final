@@ -6,8 +6,8 @@ v = 0.25   #Poisson's ratio
 pi = np.pi
 
 R = 1  # Radius of circle
-N = 4  # number of division in r direction
-theta = np.pi/4  # number of division in theta direction
+N = 8  # number of division in r direction
+theta = np.pi/8  # number of division in theta direction
 mps = 2*N-1  # number of mesh per anglular division 
 sec = int(2*np.pi/theta)  # number of angular division
 nodenum = N*sec + 1  # number of node
@@ -19,7 +19,7 @@ M = np.zeros([meshnum, 3])  # Define matrix for mesh
 msh.Findcoor(p, R, N, theta)
 msh.FindIndex(M, N, theta)
 M = M.astype(int)
-msh.Mesh(p, M)
+# msh.Mesh(p, M)
 
 N0 = [0,0]
 N1 = [1,0]
@@ -124,7 +124,7 @@ def Kreduce(K, N, sec):
 
 F = np.zeros([2*nodenum,1])
 F[8][0] = 0
-F[9][0] = -1000
+F[9][0] = -500
 def Freduce(F, N, sec):
     fk = np.delete(F, int(2*N*(sec/2 + 1) + 1), 0)
     for i in range(int(2*N*(sec/2 + 1)), int(2*(1+N*sec/2)-2), -2):
@@ -139,11 +139,28 @@ def cal_U(K, F):
     
     return u
 
-# def Deform(p, u):
-#     p = np.transpose(p)
-#     for i in range(len(p)):
-#         p[i][0] += u[2*i][0]
-#         p[i][1] += u[2*i + 1][0]
+def Uremake(u, N, sec):
+    z = np.zeros([1,1])
+    U = np.insert(u,0,z,0)
+    for i in range(2, 2*N +2, 2):
+        U = np.insert(U,i,z,0)
+    for i in range(int(2*(1+N*sec/2)), int(2*N*(sec/2 + 1) + 2),  2):
+        U = np.insert(U,i,z,0)
+    U = np.insert(U, int(2*N*(sec/2 + 1) + 1), z, 0)
+    
+    return U
+
+def Deform(p, u):
+    p = np.transpose(p)
+    for i in range(len(p)):
+        p[i][0] += u[2*i][0]
+
+        if p[i][1] + u[2*i + 1][0] < -1:
+            p[i][1] = -1
+        else:
+            p[i][1] += u[2*i + 1][0]
+
+    return np.transpose(p)
 
 # K1 = K_pstress(M1, p, E, v).K()
 # K2 = K_pstrain(M2, p, E, v).K()
@@ -151,11 +168,16 @@ TK = Ktot(M, p , E, v )
 RK = Kreduce(TK, N, sec)
 RF = Freduce(F, N, sec)
 u = cal_U(RK, RF)
+uu = Uremake(u, N, sec)
+pp = Deform(p,uu)
 # RK = np.delete(TK, 0, 0)
 print(len(np.transpose(p)))
 print(np.shape(TK))
 print(np.shape(RK))
-print(len(u))
+# print(np.shape(uu))
+# print(uu)
+
+msh.Mesh(pp, M)
 # print(len(TK))
 # KK = totK(K1,K2)
 # RK = reduce(KK)
