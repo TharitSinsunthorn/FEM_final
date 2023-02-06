@@ -34,29 +34,31 @@ def FindIndex(mesh, N, theta):
     mps = 2*N-1
 
     # Finding index
-    # mesh around origin
+    # mesh around origin, type1
     mesh[mps*(sec-1)] = [0, 1 + N*(sec-1), 1]
     for i in range(0,sec-1):
         mesh[mps*i][0] = 0
         mesh[mps*i][1] = 1 + N*i
         mesh[mps*i][2] = 1 + N*(i+1)
 
-    # mesh type1
+    # mesh type2
     for i in range (0, sec):
         for j in range(1,N):
             m = [N*i + 1 + (j-1), N*i + 2 + (j-1), N*i + N+1 + (j-1)]
 
+            # To avoid a repeated indexing
             for e in range(len(m)):
                 if m[e] > N*sec:
                     m[e] = (m[e] - N*sec)
             
             mesh[i*(mps) + j] = m
 
-    # mesh type2
+    # mesh type3
     for i in range (0, sec):
         for j in range(1,N):
             m = [N*i + 2 + (j-1), N*(i+1) + 2 + (j-1), N*(i+1) + 1 + (j-1)]
 
+            # To avoid a repeated indexing
             for e in range(len(m)):
                 if m[e] > N*sec:
                     m[e] = (m[e] - N*sec)
@@ -70,11 +72,12 @@ Findcoor(p, R, N, theta)
 FindIndex(mesh, N, theta)
 
 ## Simulation path
-def Mesh(p, mesh, xx, yy, xy):
+def Mesh(p, mesh, xx, yy, xy, f, E, v):
     
     ## Figure 1 shows contour of sigma XX
     Fxx = plt.figure(1)
-    plt.title("Element: " + str(len(mesh)) + "         Node: " + str(len(p[0])))
+    Fxx.suptitle("E: " + str("{:.1f}".format(E*10**-9)) + " GPa" + "     v: " + str(v)) 
+    plt.title("Element: " + str(len(mesh)) + "     Node: " + str(len(p[0])) + "     Force: " + str(f*10**-9) + " GN")
 
     # plot circle
     x = np.linspace(-1, 1, 100)
@@ -87,7 +90,7 @@ def Mesh(p, mesh, xx, yy, xy):
 
     # Triangulation for meshing
     triangulation = tri.Triangulation(p[0], p[1], mesh)
-    plt.triplot(triangulation, 'k-', marker = 'o', markerfacecolor = 'k')
+    plt.triplot(triangulation, 'k-', marker = '', markerfacecolor = 'k')
     # Make a color contour for element's stress
     plt.tripcolor(p[0], p[1], mesh, alpha = 1.0, cmap = 'bwr', facecolors=xx, edgecolors='k')
     plt.colorbar(label = r'$\sigma_{xx}$')
@@ -95,7 +98,8 @@ def Mesh(p, mesh, xx, yy, xy):
 
     ## Figure 2 shows contour of sigma YY
     Fyy = plt.figure(2)
-    plt.title("Element: " + str(len(mesh)) + "         Node: " + str(len(p[0])))
+    Fyy.suptitle("E: " + str("{:.1f}".format(E*10**-9)) + " GPa" + "     v: " + str(v)) 
+    plt.title("Element: " + str(len(mesh)) + "     Node: " + str(len(p[0])) + "     Force: " + str(f*10**-9) + " GN")
 
     # plot circle
     x = np.linspace(-1, 1, 100)
@@ -108,7 +112,7 @@ def Mesh(p, mesh, xx, yy, xy):
 
     # Triangulation for meshing
     triangulation = tri.Triangulation(p[0], p[1], mesh)
-    plt.triplot(triangulation, 'k-', marker = 'o', markerfacecolor = 'k')
+    plt.triplot(triangulation, 'k-', marker = '', markerfacecolor = 'k')
     # Make a color contour for element's stress
     plt.tripcolor(p[0], p[1], mesh, alpha = 1.0, cmap = 'bwr', facecolors=yy, edgecolors='k')
     plt.colorbar(label = r'$\sigma_{yy}$')
@@ -116,7 +120,8 @@ def Mesh(p, mesh, xx, yy, xy):
 
     ## Figure 3 shows contour of sigma XY
     Fxy = plt.figure(3)
-    plt.title("Element: " + str(len(mesh)) + "         Node: " + str(len(p[0])))
+    Fxy.suptitle("E: " + str("{:.1f}".format(E*10**-9)) + " GPa" + "     v: " + str(v)) 
+    plt.title("Element: " + str(len(mesh)) + "     Node: " + str(len(p[0])) + "     Force: " + str(f*10**-9) + " GN")
 
     # plot circle
     x = np.linspace(-1, 1, 100)
@@ -129,7 +134,7 @@ def Mesh(p, mesh, xx, yy, xy):
 
     # Triangulation for meshing
     triangulation = tri.Triangulation(p[0], p[1], mesh)
-    plt.triplot(triangulation, 'k-', marker = 'o', markerfacecolor = 'k')
+    plt.triplot(triangulation, 'k-', marker = '', markerfacecolor = 'k')
     # Make a color contour for element's stress
     plt.tripcolor(p[0], p[1], mesh, alpha = 1.0, cmap = 'bwr', facecolors=xy, edgecolors='k')
     plt.colorbar(label = r'$\sigma_{xy}$')
@@ -138,5 +143,3 @@ def Mesh(p, mesh, xx, yy, xy):
     
     plt.show()
 
-
-# Mesh(p, mesh)

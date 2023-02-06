@@ -1,13 +1,15 @@
 import numpy as np
 import meshing as msh
 
-E = 10000  #Young's modulus in MPa
-v = 0.25   #Poisson's ratio
+E = 73.1*10**9    #Young's modulus of alloy 2024 T4
+# E = 3.2*10**9      #Young's modulus of acrylic
+v = 0.33   # Poisson's ratio of alloy of 2024 T4
+# v = 0.37   # Poisson's ratio of acrylic
 pi = np.pi
 
 R = 1                           # Radius of circle
-N = 4                           # number of division in r direction
-theta = np.pi/4                 # number of division in theta direction
+N = 20                           # number of division in r direction
+theta = np.pi/40                # number of division in theta direction
 mps = 2*N-1                     # number of mesh per anglular division 
 sec = int(2*np.pi/theta)        # number of angular division
 nodenum = N*sec + 1             # number of node
@@ -22,9 +24,10 @@ msh.FindIndex(M, N, theta)      ## Define index for all nodes to each mesh
 M = M.astype(int)
 # msh.Mesh(p, M)
 
-## Apply the force matrix
+## Applied force matrix
+f = -1*10**9
 F = np.zeros([2*nodenum,1])
-F[2*N+1][0] = -500
+F[2*N+1][0] = f
 
 ## Class for calculate K matrix with plane strain condition
 class K_pstrain:
@@ -177,6 +180,7 @@ def Deform(p, u):
     for i in range(len(p)):
         p[i][0] += u[2*i][0]
 
+        # Give the floor boundary that the element posiotion cannot be lower than the floor
         if p[i][1] + u[2*i + 1][0] < -1:
             p[i][1] = -1
         else:
@@ -241,8 +245,9 @@ class CalStress:
         for i in range(3):
             sigma = np.transpose(self.pstrain())[i]
             Maxsig[0][i] = max(sigma, key=abs)
-            Maxsig[1][i] = np.where(sigma == max(sigma, key=abs))[0][0]
-
+            Maxsig[1][i] = int(np.where(sigma == max(sigma, key=abs))[0][0])
+        print("Maximum stress for plane strain condition")
+        print("   sigma xx        sigma yy        sigma xy")
         return Maxsig
 
     def Maxpstress(self):
@@ -250,16 +255,25 @@ class CalStress:
         for i in range(3):
             sigma = np.transpose(self.pstress())[i]
             Maxsig[0][i] = max(sigma, key=abs)
-            Maxsig[1][i] = np.where(sigma == max(sigma, key=abs))[0][0]
-
+            Maxsig[1][i] = int(np.where(sigma == max(sigma, key=abs))[0][0])
+        print("Maximum stress for plane stress condition")
+        print("   sigma xx        sigma yy        sigma xy")
         return Maxsig
 
 ## Stress matrix for all elements
-sigma = CalStress(M, p, uu, E, v).pstrain()
+sigma1 = CalStress(M, p, uu, E, v).pstrain()
+sigma2 = CalStress(M, p, uu, E, v).pstress()
 
-sigmaXX = np.transpose(sigma)[0]
-sigmaYY = np.transpose(sigma)[1]
-sigmaXY = np.transpose(sigma)[2]
+sigmaXX1 = np.transpose(sigma1)[0]
+sigmaYY1 = np.transpose(sigma1)[1]
+sigmaXY1 = np.transpose(sigma1)[2]
 
-msh.Mesh(pp, M, sigmaXX, sigmaYY, sigmaXY)
+sigmaXX2 = np.transpose(sigma2)[0]
+sigmaYY2 = np.transpose(sigma2)[1]
+sigmaXY2 = np.transpose(sigma2)[2]
 
+print(CalStress(M, p, uu, E, v).Maxpstrain())
+print(CalStress(M, p, uu, E, v).Maxpstress())
+
+msh.Mesh(pp, M, sigmaXX1, sigmaYY1, sigmaXY1, f, E, v)
+# msh.Mesh(pp, M, sigmaXX2, sigmaYY2, sigmaXY2, f, E, v)
