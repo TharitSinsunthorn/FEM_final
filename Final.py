@@ -8,8 +8,8 @@ v = 0.33   # Poisson's ratio of alloy of 2024 T4
 pi = np.pi
 
 R = 1                           # Radius of circle
-N = 20                           # number of division in r direction
-theta = np.pi/40                # number of division in theta direction
+N = 40                           # number of division in r direction
+theta = np.pi/40               # number of division in theta direction
 mps = 2*N-1                     # number of mesh per anglular division 
 sec = int(2*np.pi/theta)        # number of angular division
 nodenum = N*sec + 1             # number of node
