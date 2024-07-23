@@ -6,6 +6,7 @@ __pycache__/
 .pydevproject
 .DS_Store
 .idea
+.m
 
 .vscode/*
 !.vscode/extensions.json
