@@ -2,9 +2,7 @@ import numpy as np
 import meshing as msh
 
 E = 73.1*10**9    #Young's modulus of alloy 2024 T4
-# E = 3.2*10**9      #Young's modulus of acrylic
 v = 0.33   # Poisson's ratio of alloy of 2024 T4
-# v = 0.37   # Poisson's ratio of acrylic
 pi = np.pi
 
 R = 1                           # Radius of circle
